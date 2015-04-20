@@ -175,7 +175,7 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
 
         switch (motionEvent.getActionMasked()) {
             case MotionEvent.ACTION_DOWN: {
-                if (mPaused) {
+                if (mPaused || mDismissing) {
                     return false;
                 }
 
@@ -302,7 +302,7 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
             }
 
             case MotionEvent.ACTION_MOVE: {
-                if (mVelocityTracker == null || mPaused) {
+                if (mVelocityTracker == null || mPaused || mDismissing) {
                     break;
                 }
 

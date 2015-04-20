@@ -2,6 +2,8 @@ package com.labo.kaji.millefeuille;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
@@ -15,7 +17,7 @@ import com.nineoldandroids.view.ViewHelper;
  */
 public class ShadowCardView extends CardView implements ArcLayoutManager.ShadowDispatcher {
 
-    private View mShadowOverlay;
+    private final Drawable mShadowDrawable = new ColorDrawable(Color.BLACK);
 
     public ShadowCardView(Context context) {
         super(context);
@@ -33,29 +35,23 @@ public class ShadowCardView extends CardView implements ArcLayoutManager.ShadowD
     }
 
     private void init(Context context) {
-        mShadowOverlay = new View(context);
-        mShadowOverlay.setBackgroundColor(Color.BLACK);
-        addView(mShadowOverlay);
+        setShadowLevel(0.0f);
+        setForeground(mShadowDrawable);
+        mShadowDrawable.setBounds(getPaddingLeft(), getPaddingTop(), getWidth()-getPaddingRight(), getHeight()-getPaddingBottom());
     }
 
     @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-        mShadowOverlay.bringToFront();
+    public void setCardElevation(float radius) {
+        super.setCardElevation(radius);
     }
 
     @Override
     public void setShadowLevel(float shadowLevel) {
-//        mShadowOverlay.bringToFront();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            mShadowOverlay.setAlpha(shadowLevel);
-        } else {
-            ViewHelper.setAlpha(mShadowOverlay, shadowLevel);
-        }
+        mShadowDrawable.setAlpha((int) (shadowLevel * 255));
     }
 
     @Override
     public float getShadowLevel() {
-        return ViewCompat.getAlpha(mShadowOverlay);
+        return mShadowDrawable.getAlpha() / 255f;
     }
 }

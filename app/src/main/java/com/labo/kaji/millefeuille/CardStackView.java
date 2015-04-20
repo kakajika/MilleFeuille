@@ -41,9 +41,10 @@ public class CardStackView extends RecyclerView {
 //    }
 
     private void init(Context context) {
-        setVerticalScrollBarEnabled(true);
+        setClipToPadding(false);
+//        setVerticalScrollBarEnabled(true);
 
-        for (int i=0; i<1000; ++i) {
+        for (int i=0; i<10; ++i) {
             int color = Color.rgb((int) Math.floor(Math.random() * 128) + 64,
                                   (int) Math.floor(Math.random() * 128) + 64,
                                   (int) Math.floor(Math.random() * 128) + 64);

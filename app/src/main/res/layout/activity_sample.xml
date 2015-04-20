@@ -2,7 +2,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".SampleActivity">
+    tools:context=".SampleActivity"
+    android:background="#999">
 
     <view
         class="com.labo.kaji.millefeuille.CardStackView"

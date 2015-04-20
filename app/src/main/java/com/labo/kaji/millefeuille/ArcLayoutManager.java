@@ -11,6 +11,7 @@ import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.AbsListView;
 
 import com.nineoldandroids.view.ViewHelper;
 import com.nineoldandroids.view.ViewPropertyAnimator;
@@ -31,6 +32,8 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
     private float mMaxZ = 1.0f;
     private float mArcCurvature = 0.5f;
     private float mItemInterval = 16.0f;
+
+    private int mScrollState;
 
     public ArcLayoutManager() {
         super();
@@ -56,7 +59,7 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public int computeVerticalScrollExtent(RecyclerView.State state) {
-        return (int)mItemInterval;
+        return (int)mMaxZ;
     }
 
     @Override
@@ -67,6 +70,11 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
     @Override
     public int computeVerticalScrollRange(RecyclerView.State state) {
         return (int)(getItemCount() * mItemInterval);
+    }
+
+    @Override
+    public void onScrollStateChanged(int state) {
+        mScrollState = state;
     }
 
     @Override
@@ -111,16 +119,26 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public int scrollVerticallyBy(int dz, RecyclerView.Recycler recycler, RecyclerView.State state) {
-        super.scrollVerticallyBy(dz, recycler, state);
-
         final int parentTop = getPaddingTop();
         final int parentBottom = getHeight() - getPaddingBottom();
         final int parentLeft = getPaddingLeft();
         final int parentRight = getWidth() - getPaddingRight();
         final int itemCount = getItemCount();
 
-        float baseZ = (float) state.get(R.id.arc_z_position) - dz * SCROLL_FRICTION_SCALE;
-        baseZ = Math.min(0.0f, Math.max(baseZ, -computeVerticalScrollRange(state)));
+        float baseZ = (float) state.get(R.id.arc_z_position);
+        if (mScrollState != AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL) {
+            if (dz < 0) {
+                if (baseZ >= 0) {
+                    dz = (int) (-dz);
+                }
+            } else if (dz > 0) {
+                if (baseZ <= -computeVerticalScrollRange(state)) {
+                    dz -= 5;
+                }
+            }
+        }
+        baseZ -= dz * SCROLL_FRICTION_SCALE;
+//        baseZ = Math.min(0.0f, Math.max(baseZ, -computeVerticalScrollRange(state)));
         int firstIndex = state.get(R.id.first_item_index);
         int lastIndex = state.get(R.id.last_item_index);
 
