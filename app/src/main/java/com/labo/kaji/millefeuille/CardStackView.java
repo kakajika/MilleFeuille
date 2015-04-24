@@ -106,12 +106,13 @@ public class CardStackView extends RecyclerView {
             Card card = mList.get(position);
             ((ViewHolder) holder).colorLabel.setBackgroundColor(card.color);
             ((ViewHolder) holder).textView.setText(String.valueOf(card.number));
-//            holder.itemView.setOnClickListener(new OnClickListener() {
-//                @Override
-//                public void onClick(View v) {
-//                    smoothScrollToPosition(position);
-//                }
-//            });
+            ((ViewHolder) holder).colorLabel.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+//                    scrollToPosition(position);
+                    smoothScrollToPosition(position);
+                }
+            });
         }
 
         @Override

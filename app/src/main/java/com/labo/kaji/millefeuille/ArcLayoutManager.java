@@ -2,12 +2,14 @@ package com.labo.kaji.millefeuille;
 
 import android.animation.ValueAnimator;
 import android.graphics.Color;
+import android.graphics.PointF;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewPropertyAnimatorCompat;
 import android.support.v7.widget.CardView;
+import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
@@ -33,6 +35,7 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
     private float mArcCurvature = 0.5f;
     private float mItemInterval = 16.0f;
 
+    private float mScrollZ = 0.0f;
     private int mScrollState;
 
     public ArcLayoutManager() {
@@ -59,17 +62,17 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public int computeVerticalScrollExtent(RecyclerView.State state) {
-        return (int)mMaxZ;
+        return (int) mMaxZ;
     }
 
     @Override
     public int computeVerticalScrollOffset(RecyclerView.State state) {
-        return (int)(-(float)state.get(R.id.arc_z_position));
+        return (int) mScrollZ;
     }
 
     @Override
     public int computeVerticalScrollRange(RecyclerView.State state) {
-        return (int)(getItemCount() * mItemInterval);
+        return (int) (getItemCount() * mItemInterval - mMaxZ );
     }
 
     @Override
@@ -80,7 +83,7 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
         log("onLayoutChildren: " + state.toString());
-        if (!state.didStructureChange()) {
+        if (state.isPreLayout()) {
             return;
         }
 
@@ -94,11 +97,11 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
         final int parentRight = getWidth() - getPaddingRight();
         mMaxZ = (float) Math.sqrt(parentHeight / mArcCurvature);
 
-        final float baseZ = (state.get(R.id.arc_z_position) != null) ? (float)state.get(R.id.arc_z_position) : 0.0f;
-        int firstIndex = (state.get(R.id.first_item_index) != null) ? (int)state.get(R.id.first_item_index) : 0;
-
-        for (int idx = firstIndex; idx < itemCount; ++idx) {
-            float z = baseZ + idx * mItemInterval;
+        for (int idx = 0; idx < itemCount; ++idx) {
+            float z = idx * mItemInterval - mScrollZ;
+            if (z < -mItemInterval) {
+                continue;
+            }
             z = Math.max(0.0f, z);
             int top = (int) (z * z * mArcCurvature) + parentTop;
             if (top > parentBottom) {
@@ -109,42 +112,46 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
             measureChildWithMargins(child, 0, 0);
             int bottom = top + getDecoratedMeasuredHeight(child);
             layoutDecorated(child, parentLeft, top, parentRight, bottom);
-            setChildTransform(child, z, !state.isPreLayout() && state.willRunPredictiveAnimations());
+            setChildTransform(child, z, state.willRunPredictiveAnimations());
         }
-
-        state.put(R.id.first_item_index, firstIndex);
-        state.put(R.id.last_item_index, firstIndex + getChildCount() - 1);
-        state.put(R.id.arc_z_position, baseZ);
     }
 
     @Override
-    public int scrollVerticallyBy(int dz, RecyclerView.Recycler recycler, RecyclerView.State state) {
+    public int scrollVerticallyBy(int dy, RecyclerView.Recycler recycler, RecyclerView.State state) {
+        if (getChildCount() == 0) {
+            return 0;
+        }
+
         final int parentTop = getPaddingTop();
         final int parentBottom = getHeight() - getPaddingBottom();
         final int parentLeft = getPaddingLeft();
         final int parentRight = getWidth() - getPaddingRight();
         final int itemCount = getItemCount();
 
-        float baseZ = (float) state.get(R.id.arc_z_position);
-        if (mScrollState != AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL) {
+        float dz = dy * SCROLL_FRICTION_SCALE;
+        if (mScrollState != RecyclerView.SCROLL_STATE_DRAGGING) {
             if (dz < 0) {
-                if (baseZ >= 0) {
-                    dz = (int) (-dz);
+                if (mScrollZ <= 0) {
+//                    dz = (int) (-dz);
+                    dz = 0;
+                    dy = 0;
                 }
             } else if (dz > 0) {
-                if (baseZ <= -computeVerticalScrollRange(state)) {
-                    dz -= 5;
+                if (mScrollZ >= computeVerticalScrollRange(state)) {
+//                    dz -= 5;
+                    dz = 0;
+                    dy = 0;
                 }
             }
         }
-        baseZ -= dz * SCROLL_FRICTION_SCALE;
+        mScrollZ += dz;
 //        baseZ = Math.min(0.0f, Math.max(baseZ, -computeVerticalScrollRange(state)));
-        int firstIndex = state.get(R.id.first_item_index);
-        int lastIndex = state.get(R.id.last_item_index);
+        int firstIndex = getPosition(getChildAt(0));
+        int lastIndex  = firstIndex + getChildCount() - 1;
 
         if (dz > 0) {
             for (int idx = firstIndex; idx < itemCount; ++idx) {
-                float z = baseZ + idx * mItemInterval;
+                float z = idx * mItemInterval - mScrollZ;
                 if (z < -mItemInterval) {
 //                        Log.d(getClass().getSimpleName(), "remove child at "+firstIndex);
                     removeAndRecycleViewAt(0, recycler);
@@ -172,7 +179,7 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
             }
         } else if (dz < 0) {
             for (int idx = lastIndex; idx >= 0; --idx) {
-                float z = baseZ + idx * mItemInterval;
+                float z = idx * mItemInterval - mScrollZ;
                 if (z < -mItemInterval) {
                     break;
                 }
@@ -200,15 +207,39 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
             }
         }
 
-        state.put(R.id.arc_z_position, baseZ);
-        state.put(R.id.first_item_index, firstIndex);
-        state.put(R.id.last_item_index, lastIndex);
-        return dz;
+        return dy;
     }
 
     @Override
     public void scrollToPosition(int position) {
+        mScrollZ = (position+1) * mItemInterval - mMaxZ;
         requestLayout();
+    }
+
+    @Override
+    public void smoothScrollToPosition(RecyclerView recyclerView, RecyclerView.State state, int position) {
+        LinearSmoothScroller scroller = new LinearSmoothScroller(recyclerView.getContext() ) {
+            @Override
+            public PointF computeScrollVectorForPosition(int targetPosition) {
+                return ArcLayoutManager.this.computeScrollVectorForPosition(targetPosition);
+            }
+        };
+        scroller.setTargetPosition(position);
+        startSmoothScroll(scroller);
+    }
+
+    private PointF computeScrollVectorForPosition(int targetPosition) {
+        if (getChildCount() == 0) {
+            return null;
+        }
+//        final int firstChildPos = getPosition(getChildAt(0));
+        float targetZ = (targetPosition+1) * mItemInterval - mMaxZ;
+        if (mScrollZ < targetZ) {
+            return new PointF(0, -1);
+        } else if (mScrollZ > targetZ) {
+            return new PointF(0, 1);
+        }
+        return null;
     }
 
     @Override
@@ -225,7 +256,7 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public void onItemsMoved(RecyclerView recyclerView, int from, int to, int itemCount) {
-        log("onItemsMoved: from:"+from+" to:"+to);
+        log("onItemsMoved: from:" + from + " to:" + to);
     }
 
     @Override
