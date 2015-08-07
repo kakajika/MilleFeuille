@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 import com.labo.kaji.millefeuille.ArcLayoutManager;
 import com.labo.kaji.millefeuille.CardStackView;
@@ -20,6 +21,14 @@ public class SampleActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sample);
+
+        findViewById(R.id.button_add).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                CardStackView cardStackView = (CardStackView) findViewById(R.id.view);
+                cardStackView.addCard();
+            }
+        });
     }
 
 

@@ -35,14 +35,21 @@ public class CardStackView extends RecyclerView {
         init(context);
     }
 
+    public void addCard() {
+        int color = Color.rgb((int) Math.floor(Math.random() * 128) + 64,
+                (int) Math.floor(Math.random() * 128) + 64,
+                (int) Math.floor(Math.random() * 128) + 64);
+        mCardList.add(new Card(color));
+        if (getAdapter() != null) {
+            getAdapter().notifyItemInserted(mCardList.size() - 1);
+        }
+    }
+
     private void init(Context context) {
         setClipToPadding(false);
 
         for (int i=0; i<10; ++i) {
-            int color = Color.rgb((int) Math.floor(Math.random() * 128) + 64,
-                                  (int) Math.floor(Math.random() * 128) + 64,
-                                  (int) Math.floor(Math.random() * 128) + 64);
-            mCardList.add(new Card(i + 1, color));
+            addCard();
         }
 
         final RecyclerView.Adapter adapter = new CardAdapter(mCardList);
@@ -64,7 +71,7 @@ public class CardStackView extends RecyclerView {
                 switch (actionState) {
                     case ItemTouchHelper.ACTION_STATE_DRAG:
                     case ItemTouchHelper.ACTION_STATE_SWIPE:
-                        viewHolder.itemView.animate().alpha(0.5f);
+                        viewHolder.itemView.setAlpha(0.5f);
                         break;
                 }
             }
@@ -95,10 +102,11 @@ public class CardStackView extends RecyclerView {
     }
 
     public static class Card {
+        private static int sSerialNumber = 0;
         public final int number;
         public final int color;
-        public Card(int number, int color) {
-            this.number = number;
+        public Card(int color) {
+            this.number = ++sSerialNumber;
             this.color = color;
         }
     }
