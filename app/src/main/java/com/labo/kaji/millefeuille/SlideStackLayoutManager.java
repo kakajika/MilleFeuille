@@ -1,15 +1,12 @@
 package com.labo.kaji.millefeuille;
 
-import android.os.Build;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
-import com.labo.kaji.millefeuille.R;
-import com.nineoldandroids.view.ViewHelper;
-
 /**
- * Created by kakajika on 2015/04/18.
+ * @author kakajika
+ * @since 2015/04/18
  */
 public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
 

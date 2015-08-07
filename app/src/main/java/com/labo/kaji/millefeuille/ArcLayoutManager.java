@@ -1,25 +1,21 @@
 package com.labo.kaji.millefeuille;
 
 import android.animation.ValueAnimator;
-import android.graphics.Color;
 import android.graphics.PointF;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
-import android.support.v4.view.ViewPropertyAnimatorCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
-import android.widget.AbsListView;
 
 import com.nineoldandroids.view.ViewHelper;
-import com.nineoldandroids.view.ViewPropertyAnimator;
 
 /**
- * Created by kakajika on 2015/04/18.
+ * @author kakajika
+ * @since 2015/04/18.
  */
 public class ArcLayoutManager extends RecyclerView.LayoutManager {
 
@@ -245,13 +241,6 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
     @Override
     public void onItemsRemoved(RecyclerView recyclerView, int positionStart, int itemCount) {
         log("onItemsRemoved: position:" + positionStart);
-        for (int i=0; i<getChildCount(); ++i) {
-            View child = getChildAt(i);
-            int position = getPosition(child);
-            if (positionStart <= position && position < positionStart+itemCount) {
-//                ViewCompat.setAlpha(child, 0.5f);
-            }
-        }
     }
 
     @Override
@@ -276,7 +265,6 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
             child.setPivotX(child.getWidth() * 0.5f);
             child.setPivotY(0.0f);
             child.setTranslationX(0);
-            child.setAlpha(1.0f);
             if (animated) {
                 ValueAnimator anim = ValueAnimator.ofFloat(preScale, scale);
                 anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -298,7 +286,6 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
             ViewHelper.setPivotY(child, 0.0f);
         }
         if (child instanceof CardView) {
-//                ((CardView)child).setMaxCardElevation(mMaxZ);
             ((CardView) child).setCardElevation(z);
         }
         if (child instanceof ShadowDispatcher) {

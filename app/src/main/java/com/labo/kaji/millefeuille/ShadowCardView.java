@@ -4,16 +4,12 @@ import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
-import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.util.AttributeSet;
-import android.view.View;
-
-import com.nineoldandroids.view.ViewHelper;
 
 /**
- * Created by kakajika on 2015/04/18.
+ * @author kakajika
+ * @since 2015/04/18.
  */
 public class ShadowCardView extends CardView implements ArcLayoutManager.ShadowDispatcher {
 
@@ -36,7 +32,7 @@ public class ShadowCardView extends CardView implements ArcLayoutManager.ShadowD
 
     private void init(Context context) {
         setShadowLevel(0.0f);
-        setForeground(mShadowDrawable);
+//        setForeground(mShadowDrawable);
         mShadowDrawable.setBounds(getPaddingLeft(), getPaddingTop(), getWidth()-getPaddingRight(), getHeight()-getPaddingBottom());
     }
 
@@ -54,4 +50,5 @@ public class ShadowCardView extends CardView implements ArcLayoutManager.ShadowD
     public float getShadowLevel() {
         return mShadowDrawable.getAlpha() / 255f;
     }
+
 }

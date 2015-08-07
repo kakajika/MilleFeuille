@@ -2,13 +2,18 @@ package com.labo.kaji.millefeuille.sample;
 
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.LinearLayoutManager;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.labo.kaji.millefeuille.ArcLayoutManager;
+import com.labo.kaji.millefeuille.CardStackView;
 import com.labo.kaji.millefeuille.R;
+import com.labo.kaji.millefeuille.SlideStackLayoutManager;
 
-
+/**
+ * @author kakajika
+ */
 public class SampleActivity extends ActionBarActivity {
 
     @Override
@@ -20,23 +25,30 @@ public class SampleActivity extends ActionBarActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_sample, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        switch (id) {
+            case R.id.action_layout_arc: {
+                CardStackView cardStackView = (CardStackView) findViewById(R.id.view);
+                cardStackView.setLayoutManager(new ArcLayoutManager());
+                return true;
+            }
+            case R.id.action_layout_slide: {
+                CardStackView cardStackView = (CardStackView) findViewById(R.id.view);
+                cardStackView.setLayoutManager(new SlideStackLayoutManager());
+                return true;
+            }
+            case R.id.action_layout_linear: {
+                CardStackView cardStackView = (CardStackView) findViewById(R.id.view);
+                cardStackView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
+                return true;
+            }
         }
-
         return super.onOptionsItemSelected(item);
     }
 }

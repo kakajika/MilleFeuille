@@ -2,8 +2,8 @@ package com.labo.kaji.millefeuille;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,7 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by kakajika on 2015/01/22.
+ * @author kakajika
+ * @since 2015/01/22
  */
 public class CardStackView extends RecyclerView {
 
@@ -34,15 +35,8 @@ public class CardStackView extends RecyclerView {
         init(context);
     }
 
-//    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-//    public CardStackView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
-//        super(context, attrs, defStyleAttr, defStyleRes);
-//        init(context);
-//    }
-
     private void init(Context context) {
         setClipToPadding(false);
-//        setVerticalScrollBarEnabled(true);
 
         for (int i=0; i<10; ++i) {
             int color = Color.rgb((int) Math.floor(Math.random() * 128) + 64,
@@ -52,31 +46,52 @@ public class CardStackView extends RecyclerView {
         }
 
         final RecyclerView.Adapter adapter = new CardAdapter(mCardList);
-
         setAdapter(adapter);
-//        setAdapter(new AlphaInAnimationAdapter(new CardAdapter()));
 
-//        setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false));
         setLayoutManager(new ArcLayoutManager());
-//        setLayoutManager(new SlideStackLayoutManager());
 
-        SwipeDismissRecyclerViewTouchListener touchListener =
-                new SwipeDismissRecyclerViewTouchListener(
-                        this,
-                        new SwipeDismissRecyclerViewTouchListener.DismissCallbacks() {
-                            @Override
-                            public boolean canDismiss(int position) {
-                                return !isLayoutRequested();
-                            }
-                            public void onDismiss(RecyclerView listView, int position) {
-//                                for (int position : reverseSortedPositions) {
-                                    mCardList.remove(position);
-                                    adapter.notifyItemRemoved(position);
-//                                }
-                            }
-                        });
-        setOnTouchListener(touchListener);
-        setOnScrollListener(touchListener.makeScrollListener());
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.Callback() {
+
+            @Override
+            public int getMovementFlags(RecyclerView recyclerView, ViewHolder viewHolder) {
+                return makeFlag(ItemTouchHelper.ACTION_STATE_SWIPE, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) |
+                        makeFlag(ItemTouchHelper.ACTION_STATE_DRAG, ItemTouchHelper.UP | ItemTouchHelper.DOWN);
+            }
+
+            @Override
+            public void onSelectedChanged(ViewHolder viewHolder, int actionState) {
+                super.onSelectedChanged(viewHolder, actionState);
+                switch (actionState) {
+                    case ItemTouchHelper.ACTION_STATE_DRAG:
+                    case ItemTouchHelper.ACTION_STATE_SWIPE:
+                        viewHolder.itemView.animate().alpha(0.5f);
+                        break;
+                }
+            }
+
+            @Override
+            public void clearView(RecyclerView recyclerView, ViewHolder viewHolder) {
+                super.clearView(recyclerView, viewHolder);
+                viewHolder.itemView.animate().alpha(1.0f);
+            }
+
+            @Override
+            public boolean onMove(RecyclerView recyclerView, ViewHolder viewHolder, ViewHolder target) {
+                final int srcPos = viewHolder.getAdapterPosition();
+                final int dstPos = target.getAdapterPosition();
+                mCardList.add(dstPos, mCardList.remove(srcPos));
+                adapter.notifyItemMoved(srcPos, dstPos);
+                return true;
+            }
+
+            @Override
+            public void onSwiped(ViewHolder viewHolder, int direction) {
+                final int pos = viewHolder.getAdapterPosition();
+                mCardList.remove(pos);
+                adapter.notifyItemRemoved(pos);
+            }
+        });
+        itemTouchHelper.attachToRecyclerView(this);
     }
 
     public static class Card {
