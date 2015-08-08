@@ -1,6 +1,6 @@
 package com.labo.kaji.millefeuille;
 
-import android.support.v7.widget.CardView;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
@@ -14,7 +14,10 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
     private static final float SCROLL_FRICTION_SCALE = 0.02f;
     private static final float ITEM_Z_INTERVAL = 12.0f;
 
+    private float mItemInterval = 12.0f;
     private float mMaxZ = 1.0f;
+    private float mScrollZ = 0.0f;
+    private int mScrollState;
 
     public SlideStackLayoutManager() {
         super();
@@ -31,8 +34,32 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
     }
 
     @Override
+    public int computeVerticalScrollExtent(RecyclerView.State state) {
+        return (int) mMaxZ;
+    }
+
+    @Override
+    public int computeVerticalScrollOffset(RecyclerView.State state) {
+        return (int) mScrollZ;
+    }
+
+    @Override
+    public int computeVerticalScrollRange(RecyclerView.State state) {
+        return (int) (getItemCount() * mItemInterval - mMaxZ );
+    }
+
+    @Override
+    public void onScrollStateChanged(int state) {
+        mScrollState = state;
+    }
+
+    @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
         super.onLayoutChildren(recycler, state);
+        if (state.isPreLayout()) {
+            return;
+        }
+
         detachAndScrapAttachedViews(recycler);
 
         final int itemCount = getItemCount();
@@ -44,7 +71,11 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
         mMaxZ = (float) Math.sqrt(parentHeight);
 
         for (int idx = 0; idx < itemCount; ++idx) {
-            float z = idx * ITEM_Z_INTERVAL;
+            float z = idx * mItemInterval - mScrollZ;
+            if (z < -mItemInterval) {
+                continue;
+            }
+            z = Math.max(0.0f, z);
             int top = (int) (z * z) + parentTop;
             if (top > parentBottom) {
                 break;
@@ -54,30 +85,47 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
             measureChildWithMargins(child, 0, 0);
             int bottom = top + getDecoratedMeasuredHeight(child);
             layoutDecorated(child, parentLeft, top, parentRight, bottom);
-            setChildTransform(child, z);
+            setChildTransform(child, z, state.willRunPredictiveAnimations());
         }
-
-        state.put(R.id.first_item_index, 0);
-        state.put(R.id.last_item_index, getChildCount() - 1);
-        state.put(R.id.arc_z_position, 0.0f);
     }
 
     @Override
-    public int scrollVerticallyBy(int dz, RecyclerView.Recycler recycler, RecyclerView.State state) {
+    public int scrollVerticallyBy(int dy, RecyclerView.Recycler recycler, RecyclerView.State state) {
+        if (getChildCount() == 0) {
+            return 0;
+        }
+
         final int parentTop = getPaddingTop();
         final int parentBottom = getHeight() - getPaddingBottom();
         final int parentLeft = getPaddingLeft();
         final int parentRight = getWidth() - getPaddingRight();
         final int itemCount = getItemCount();
 
-        final float baseZ = (float) state.get(R.id.arc_z_position) - dz * SCROLL_FRICTION_SCALE;
-        int firstIndex = state.get(R.id.first_item_index);
-        int lastIndex = state.get(R.id.last_item_index);
+        float dz = dy * SCROLL_FRICTION_SCALE;
+        if (mScrollState != RecyclerView.SCROLL_STATE_DRAGGING) {
+            if (dz < 0) {
+                if (mScrollZ <= 0) {
+//                    dz = (int) (-dz);
+                    dz = 0;
+                    dy = 0;
+                }
+            } else if (dz > 0) {
+                if (mScrollZ >= computeVerticalScrollRange(state)) {
+//                    dz -= 5;
+                    dz = 0;
+                    dy = 0;
+                }
+            }
+        }
+        mScrollZ += dz;
+//        baseZ = Math.min(0.0f, Math.max(baseZ, -computeVerticalScrollRange(state)));
+        int firstIndex = getPosition(getChildAt(0));
+        int lastIndex  = firstIndex + getChildCount() - 1;
 
         if (dz > 0) {
             for (int idx = firstIndex; idx < itemCount; ++idx) {
-                float z = baseZ + idx * ITEM_Z_INTERVAL;
-                if (z < -ITEM_Z_INTERVAL) {
+                float z = idx * mItemInterval - mScrollZ;
+                if (z < -mItemInterval) {
 //                        Log.d(getClass().getSimpleName(), "remove child at "+firstIndex);
                     removeAndRecycleViewAt(0, recycler);
                     ++firstIndex;
@@ -104,8 +152,8 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
             }
         } else if (dz < 0) {
             for (int idx = lastIndex; idx >= 0; --idx) {
-                float z = baseZ + idx * ITEM_Z_INTERVAL;
-                if (z < -ITEM_Z_INTERVAL) {
+                float z = idx * mItemInterval - mScrollZ;
+                if (z < -mItemInterval) {
                     break;
                 }
                 z = Math.max(0.0f, z);
@@ -132,27 +180,14 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
             }
         }
 
-        state.put(R.id.arc_z_position, baseZ);
-        state.put(R.id.first_item_index, firstIndex);
-        state.put(R.id.last_item_index, lastIndex);
-        return dz;
+        return dy;
     }
 
-    private void setChildTransform(View child, float z) {
-        final float scale = z / mMaxZ * (1.0f - MIN_HORIZONTAL_SCALE) + MIN_HORIZONTAL_SCALE;
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-//            child.setScaleX(scale);
-//            child.setScaleY(scale);
-//            child.setPivotY(0.0f);
-//        } else {
-//            ViewHelper.setScaleX(child, 0.0f);
-//            ViewHelper.setScaleY(child, 0.0f);
-//            ViewHelper.setPivotY(child, 0.0f);
-//        }
-        if (child instanceof CardView) {
-//                ((CardView)child).setMaxCardElevation(mMaxZ);
-            ((CardView) child).setCardElevation(z);
-        }
+    private void setChildTransform(@NonNull View child, float z) {
+        setChildTransform(child, z, false);
+    }
+
+    private void setChildTransform(@NonNull final View child, float z, boolean animated) {
     }
 
 }

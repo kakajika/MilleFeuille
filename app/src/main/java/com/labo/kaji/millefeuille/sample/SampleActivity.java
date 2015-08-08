@@ -9,7 +9,6 @@ import android.view.View;
 
 import com.labo.kaji.millefeuille.ArcLayoutManager;
 import com.labo.kaji.millefeuille.CardStackView;
-import com.labo.kaji.millefeuille.R;
 import com.labo.kaji.millefeuille.SlideStackLayoutManager;
 
 /**
