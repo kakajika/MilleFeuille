@@ -1,26 +1,52 @@
 package com.labo.kaji.millefeuille;
 
+import android.animation.Animator;
+import android.animation.TimeInterpolator;
+import android.animation.ValueAnimator;
 import android.content.Context;
+import android.graphics.PointF;
+import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.v4.view.ViewCompat;
+import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
+
+import com.nineoldandroids.view.ViewHelper;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * @author kakajika
- * @since 2015/04/18
+ * @since 2015/04/18.
  */
-public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
+public class LArcStackLayoutManager extends RecyclerView.LayoutManager {
 
+    private static final float MIN_HORIZONTAL_SCALE = 0.7f;
     private static final float SCROLL_FRICTION_SCALE = 0.02f;
 
-    private float mItemInterval = 12.0f;
     private float mMaxZ = 1.0f;
+    private float mArcCurvature = 0.5f;
+    private float mItemInterval = 16.0f;
+
     private float mScrollZ = 0.0f;
     private int mScrollState;
+    private final Map<View, Animator> mAnimatorMap = new HashMap<>();
 
-    public SlideStackLayoutManager(Context context) {
+    public LArcStackLayoutManager(Context context) {
         super();
         mItemInterval = context.getResources().getDimensionPixelSize(R.dimen.arc_item_z_interval_default);
+    }
+
+    public void setArcCurvature(float arcCurvature) {
+        mArcCurvature = arcCurvature;
+    }
+
+    public void setItemInterval(float itemInterval) {
+        mItemInterval = itemInterval;
     }
 
     @Override
@@ -53,9 +79,18 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
         mScrollState = state;
     }
 
+    private float calcY(float z) {
+        float turnZ = 0.25f * mMaxZ;
+        if (z > turnZ) {
+            return ((turnZ + mMaxZ) * z - turnZ * mMaxZ) * mArcCurvature;
+        } else {
+            return z * turnZ * mArcCurvature;
+        }
+    }
+
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        super.onLayoutChildren(recycler, state);
+        log("onLayoutChildren: ", state);
         if (state.isPreLayout()) {
             return;
         }
@@ -68,7 +103,7 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
         final int parentHeight = parentBottom - parentTop;
         final int parentLeft = getPaddingLeft();
         final int parentRight = getWidth() - getPaddingRight();
-        mMaxZ = (float) Math.sqrt(parentHeight);
+        mMaxZ = (float) Math.sqrt(parentHeight / mArcCurvature);
 
         for (int idx = 0; idx < itemCount; ++idx) {
             float z = idx * mItemInterval - mScrollZ;
@@ -76,7 +111,7 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
                 continue;
             }
             z = Math.max(0.0f, z);
-            int top = (int) (z * z) + parentTop;
+            int top = (int) calcY(z) + parentTop;
             if (top > parentBottom) {
                 break;
             }
@@ -126,13 +161,12 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
             for (int idx = firstIndex; idx < itemCount; ++idx) {
                 float z = idx * mItemInterval - mScrollZ;
                 if (z < -mItemInterval) {
-//                        Log.d(getClass().getSimpleName(), "remove child at "+firstIndex);
                     removeAndRecycleViewAt(0, recycler);
                     ++firstIndex;
                     continue;
                 }
                 z = Math.max(0.0f, z);
-                int top = (int) (z * z) + parentTop;
+                int top = (int) calcY(z) + parentTop;
                 if (top > parentBottom) {
                     break;
                 }
@@ -141,7 +175,6 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
                 if (idx <= lastIndex) {
                     child = getChildAt(idx - firstIndex);
                 } else {
-//                        Log.d(getClass().getSimpleName(), "add child to "+idx);
                     child = recycler.getViewForPosition(idx);
                     addView(child);
                     ++lastIndex;
@@ -157,9 +190,8 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
                     break;
                 }
                 z = Math.max(0.0f, z);
-                int top = (int) (z * z) + parentTop;
+                int top = (int) calcY(z) + parentTop;
                 if (top > parentBottom) {
-//                        Log.d(getClass().getSimpleName(), "remove child at "+lastIndex);
                     removeAndRecycleViewAt(lastIndex - firstIndex, recycler);
                     --lastIndex;
                     continue;
@@ -169,7 +201,6 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
                 if (idx >= firstIndex) {
                     child = getChildAt(idx - firstIndex);
                 } else {
-//                        Log.d(getClass().getSimpleName(), "add child to "+idx);
                     child = recycler.getViewForPosition(idx);
                     addView(child, 0);
                     --firstIndex;
@@ -183,11 +214,121 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
         return dy;
     }
 
+    @Override
+    public void scrollToPosition(int position) {
+        mScrollZ = (position+1) * mItemInterval - mMaxZ;
+        requestLayout();
+    }
+
+    @Override
+    public void smoothScrollToPosition(RecyclerView recyclerView, RecyclerView.State state, int position) {
+        LinearSmoothScroller scroller = new LinearSmoothScroller(recyclerView.getContext() ) {
+            @Override
+            public PointF computeScrollVectorForPosition(int targetPosition) {
+                return LArcStackLayoutManager.this.computeScrollVectorForPosition(targetPosition);
+            }
+        };
+        scroller.setTargetPosition(position);
+        startSmoothScroll(scroller);
+    }
+
+    private PointF computeScrollVectorForPosition(int targetPosition) {
+        if (getChildCount() == 0) {
+            return null;
+        }
+        float targetZ = (targetPosition+1) * mItemInterval - mMaxZ;
+        if (mScrollZ < targetZ) {
+            mScrollZ += 1;
+            return new PointF(0, mArcCurvature);
+        } else if (mScrollZ > targetZ) {
+            mScrollZ -= 1;
+            return new PointF(0, -mArcCurvature);
+        }
+        return null;
+    }
+
+    @Override
+    public void onItemsRemoved(RecyclerView recyclerView, int positionStart, int itemCount) {
+        log("onItemsRemoved: position:", positionStart);
+    }
+
+    @Override
+    public void onItemsMoved(RecyclerView recyclerView, int from, int to, int itemCount) {
+        log("onItemsMoved: from:", from, " to:", to);
+    }
+
+    @Override
+    public boolean supportsPredictiveItemAnimations() {
+        return true;
+    }
+
     private void setChildTransform(@NonNull View child, float z) {
         setChildTransform(child, z, false);
     }
 
     private void setChildTransform(@NonNull final View child, float z, boolean animated) {
+        final float zScale = z / mMaxZ;
+        final float preScale = ViewCompat.getScaleX(child);
+        final float scale = zScale * (1.0f - MIN_HORIZONTAL_SCALE) + MIN_HORIZONTAL_SCALE;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            child.setPivotX(child.getWidth() * 0.5f);
+            child.setPivotY(0.0f);
+            if (mAnimatorMap.containsKey(child)) {
+                mAnimatorMap.remove(child).cancel();
+            }
+            if (animated) {
+                ValueAnimator anim = ValueAnimator.ofFloat(preScale, scale);
+                anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(@NonNull ValueAnimator animation) {
+                        child.setScaleX((float) animation.getAnimatedValue());
+                        child.setScaleY((float) animation.getAnimatedValue());
+                    }
+                });
+                anim.setDuration(500);
+                anim.start();
+                mAnimatorMap.put(child, anim);
+            } else {
+                child.setScaleX(scale);
+                child.setScaleY(scale);
+            }
+        } else {
+            ViewHelper.setScaleX(child, 0.0f);
+            ViewHelper.setScaleY(child, 0.0f);
+            ViewHelper.setPivotY(child, 0.0f);
+        }
+        if (child instanceof ShadeApplicator) {
+            final float shadowLevel = Math.max(0.0f, 1.0f - zScale - MIN_HORIZONTAL_SCALE * 0.5f);
+            if (animated) {
+                final float preShadowLevel = ((ShadeApplicator) child).getShadeLevel();
+                ValueAnimator anim = ValueAnimator.ofFloat(preShadowLevel, shadowLevel);
+                anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator animation) {
+                        ((ShadeApplicator) child).setShadeLevel((float) animation.getAnimatedValue());
+                    }
+                });
+                anim.setDuration(500);
+                anim.start();
+            } else {
+                ((ShadeApplicator) child).setShadeLevel(shadowLevel);
+            }
+        }
+    }
+
+    private void clearChildAnimations() {
+        Iterator<Map.Entry<View, Animator>> iterator = mAnimatorMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<View, Animator> entry = iterator.next();
+            entry.getValue().cancel();
+            iterator.remove();
+        }
+    }
+
+    private void log(@NonNull String message, Object... args) {
+        StringBuilder string = new StringBuilder(message);
+        for (Object arg : args) string.append(arg.toString());
+        Log.i(getClass().getSimpleName(), string.toString());
     }
 
 }

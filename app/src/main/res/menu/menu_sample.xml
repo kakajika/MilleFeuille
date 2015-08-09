@@ -5,8 +5,16 @@
           android:title="Arc Stack"
           android:orderInCategory="100"
           app:showAsAction="never" />
+    <item android:id="@+id/action_layout_larc"
+          android:title="L-Arc Stack"
+          android:orderInCategory="100"
+          app:showAsAction="never" />
     <item android:id="@+id/action_layout_slide"
           android:title="Slide Stack"
+          android:orderInCategory="100"
+          app:showAsAction="never" />
+    <item android:id="@+id/action_layout_tilt"
+          android:title="Tilt Stack"
           android:orderInCategory="100"
           app:showAsAction="never" />
     <item android:id="@+id/action_layout_linear"

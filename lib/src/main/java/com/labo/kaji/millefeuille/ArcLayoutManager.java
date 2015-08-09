@@ -1,11 +1,13 @@
 package com.labo.kaji.millefeuille;
 
+import android.animation.Animator;
+import android.animation.TimeInterpolator;
 import android.animation.ValueAnimator;
+import android.content.Context;
 import android.graphics.PointF;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
-import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -13,16 +15,15 @@ import android.view.View;
 
 import com.nineoldandroids.view.ViewHelper;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 /**
  * @author kakajika
  * @since 2015/04/18.
  */
 public class ArcLayoutManager extends RecyclerView.LayoutManager {
-
-    public interface ShadowDispatcher {
-        void setShadowLevel(float shadowLevel);
-        float getShadowLevel();
-    }
 
     private static final float MIN_HORIZONTAL_SCALE = 0.7f;
     private static final float SCROLL_FRICTION_SCALE = 0.02f;
@@ -33,9 +34,11 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
 
     private float mScrollZ = 0.0f;
     private int mScrollState;
+    private final Map<View, Animator> mAnimatorMap = new HashMap<>();
 
-    public ArcLayoutManager() {
+    public ArcLayoutManager(Context context) {
         super();
+        mItemInterval = context.getResources().getDimensionPixelSize(R.dimen.arc_item_z_interval_default);
     }
 
     public void setArcCurvature(float arcCurvature) {
@@ -78,7 +81,7 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        log("onLayoutChildren: " + state.toString());
+        log("onLayoutChildren: ", state);
         if (state.isPreLayout()) {
             return;
         }
@@ -149,7 +152,6 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
             for (int idx = firstIndex; idx < itemCount; ++idx) {
                 float z = idx * mItemInterval - mScrollZ;
                 if (z < -mItemInterval) {
-//                        Log.d(getClass().getSimpleName(), "remove child at "+firstIndex);
                     removeAndRecycleViewAt(0, recycler);
                     ++firstIndex;
                     continue;
@@ -164,7 +166,6 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
                 if (idx <= lastIndex) {
                     child = getChildAt(idx - firstIndex);
                 } else {
-//                        Log.d(getClass().getSimpleName(), "add child to "+idx);
                     child = recycler.getViewForPosition(idx);
                     addView(child);
                     ++lastIndex;
@@ -182,7 +183,6 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
                 z = Math.max(0.0f, z);
                 int top = (int) (z * z * mArcCurvature) + parentTop;
                 if (top > parentBottom) {
-//                        Log.d(getClass().getSimpleName(), "remove child at "+lastIndex);
                     removeAndRecycleViewAt(lastIndex - firstIndex, recycler);
                     --lastIndex;
                     continue;
@@ -192,7 +192,6 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
                 if (idx >= firstIndex) {
                     child = getChildAt(idx - firstIndex);
                 } else {
-//                        Log.d(getClass().getSimpleName(), "add child to "+idx);
                     child = recycler.getViewForPosition(idx);
                     addView(child, 0);
                     --firstIndex;
@@ -228,24 +227,25 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
         if (getChildCount() == 0) {
             return null;
         }
-//        final int firstChildPos = getPosition(getChildAt(0));
         float targetZ = (targetPosition+1) * mItemInterval - mMaxZ;
         if (mScrollZ < targetZ) {
-            return new PointF(0, -1);
+            mScrollZ += 1;
+            return new PointF(0, mArcCurvature);
         } else if (mScrollZ > targetZ) {
-            return new PointF(0, 1);
+            mScrollZ -= 1;
+            return new PointF(0, -mArcCurvature);
         }
         return null;
     }
 
     @Override
     public void onItemsRemoved(RecyclerView recyclerView, int positionStart, int itemCount) {
-        log("onItemsRemoved: position:" + positionStart);
+        log("onItemsRemoved: position:", positionStart);
     }
 
     @Override
     public void onItemsMoved(RecyclerView recyclerView, int from, int to, int itemCount) {
-        log("onItemsMoved: from:" + from + " to:" + to);
+        log("onItemsMoved: from:", from, " to:", to);
     }
 
     @Override
@@ -264,18 +264,21 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             child.setPivotX(child.getWidth() * 0.5f);
             child.setPivotY(0.0f);
-            child.setTranslationX(0);
+            if (mAnimatorMap.containsKey(child)) {
+                mAnimatorMap.remove(child).cancel();
+            }
             if (animated) {
                 ValueAnimator anim = ValueAnimator.ofFloat(preScale, scale);
                 anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                     @Override
-                    public void onAnimationUpdate(ValueAnimator animation) {
+                    public void onAnimationUpdate(@NonNull ValueAnimator animation) {
                         child.setScaleX((float) animation.getAnimatedValue());
                         child.setScaleY((float) animation.getAnimatedValue());
                     }
                 });
                 anim.setDuration(500);
                 anim.start();
+                mAnimatorMap.put(child, anim);
             } else {
                 child.setScaleX(scale);
                 child.setScaleY(scale);
@@ -285,30 +288,38 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
             ViewHelper.setScaleY(child, 0.0f);
             ViewHelper.setPivotY(child, 0.0f);
         }
-        if (child instanceof CardView) {
-            ((CardView) child).setCardElevation(z);
-        }
-        if (child instanceof ShadowDispatcher) {
+        if (child instanceof ShadeApplicator) {
             final float shadowLevel = Math.max(0.0f, 1.0f - zScale - MIN_HORIZONTAL_SCALE * 0.5f);
             if (animated) {
-                final float preShadowLevel = ((ShadowDispatcher) child).getShadowLevel();
+                final float preShadowLevel = ((ShadeApplicator) child).getShadeLevel();
                 ValueAnimator anim = ValueAnimator.ofFloat(preShadowLevel, shadowLevel);
                 anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                     @Override
                     public void onAnimationUpdate(ValueAnimator animation) {
-                        ((ShadowDispatcher) child).setShadowLevel((float) animation.getAnimatedValue());
+                        ((ShadeApplicator) child).setShadeLevel((float) animation.getAnimatedValue());
                     }
                 });
                 anim.setDuration(500);
                 anim.start();
             } else {
-                ((ShadowDispatcher) child).setShadowLevel(shadowLevel);
+                ((ShadeApplicator) child).setShadeLevel(shadowLevel);
             }
         }
     }
 
-    private void log(String message) {
-        Log.i(getClass().getSimpleName(), message);
+    private void clearChildAnimations() {
+        Iterator<Map.Entry<View, Animator>> iterator = mAnimatorMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<View, Animator> entry = iterator.next();
+            entry.getValue().cancel();
+            iterator.remove();
+        }
+    }
+
+    private void log(@NonNull String message, Object... args) {
+        StringBuilder string = new StringBuilder(message);
+        for (Object arg : args) string.append(arg.toString());
+        Log.i(getClass().getSimpleName(), string.toString());
     }
 
 }

@@ -1,4 +1,4 @@
-package com.labo.kaji.millefeuille;
+package com.labo.kaji.millefeuille.sample;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -9,7 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.labo.kaji.millefeuille.sample.R;
+import com.labo.kaji.millefeuille.ArcLayoutManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +57,7 @@ public class CardStackView extends RecyclerView {
         final RecyclerView.Adapter adapter = new CardAdapter(mCardList);
         setAdapter(adapter);
 
-        setLayoutManager(new ArcLayoutManager());
+        setLayoutManager(new ArcLayoutManager(context));
 
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.Callback() {
 

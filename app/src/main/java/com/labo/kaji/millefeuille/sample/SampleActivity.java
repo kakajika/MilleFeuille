@@ -8,8 +8,9 @@ import android.view.MenuItem;
 import android.view.View;
 
 import com.labo.kaji.millefeuille.ArcLayoutManager;
-import com.labo.kaji.millefeuille.CardStackView;
+import com.labo.kaji.millefeuille.LArcStackLayoutManager;
 import com.labo.kaji.millefeuille.SlideStackLayoutManager;
+import com.labo.kaji.millefeuille.TiltStackLayoutManager;
 
 /**
  * @author kakajika
@@ -26,6 +27,7 @@ public class SampleActivity extends ActionBarActivity {
             public void onClick(View v) {
                 CardStackView cardStackView = (CardStackView) findViewById(R.id.view);
                 cardStackView.addCard();
+                cardStackView.smoothScrollToPosition(cardStackView.getAdapter().getItemCount() - 1);
             }
         });
     }
@@ -43,12 +45,22 @@ public class SampleActivity extends ActionBarActivity {
         switch (id) {
             case R.id.action_layout_arc: {
                 CardStackView cardStackView = (CardStackView) findViewById(R.id.view);
-                cardStackView.setLayoutManager(new ArcLayoutManager());
+                cardStackView.setLayoutManager(new ArcLayoutManager(this));
+                return true;
+            }
+            case R.id.action_layout_larc: {
+                CardStackView cardStackView = (CardStackView) findViewById(R.id.view);
+                cardStackView.setLayoutManager(new LArcStackLayoutManager(this));
                 return true;
             }
             case R.id.action_layout_slide: {
                 CardStackView cardStackView = (CardStackView) findViewById(R.id.view);
-                cardStackView.setLayoutManager(new SlideStackLayoutManager());
+                cardStackView.setLayoutManager(new SlideStackLayoutManager(this));
+                return true;
+            }
+            case R.id.action_layout_tilt: {
+                CardStackView cardStackView = (CardStackView) findViewById(R.id.view);
+                cardStackView.setLayoutManager(new TiltStackLayoutManager(this));
                 return true;
             }
             case R.id.action_layout_linear: {

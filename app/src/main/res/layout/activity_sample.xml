@@ -8,7 +8,7 @@
     android:background="#999">
 
     <view
-        class="com.labo.kaji.millefeuille.CardStackView"
+        class="com.labo.kaji.millefeuille.sample.CardStackView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/view"
@@ -26,7 +26,6 @@
         android:layout_alignParentBottom="true"
         app:fabSize="normal"
         android:src="@drawable/ic_add"
-        android:backgroundTint="#0CF"
         />
     
 </RelativeLayout>
