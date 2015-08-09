@@ -1,4 +1,4 @@
-package com.labo.kaji.millefeuille;
+package com.labo.kaji.millefeuille.sample;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
