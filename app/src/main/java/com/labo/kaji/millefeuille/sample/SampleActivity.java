@@ -7,7 +7,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import com.labo.kaji.millefeuille.ArcLayoutManager;
+import com.labo.kaji.millefeuille.ArcStackLayoutManager;
 import com.labo.kaji.millefeuille.LArcStackLayoutManager;
 import com.labo.kaji.millefeuille.SlideStackLayoutManager;
 import com.labo.kaji.millefeuille.TiltStackLayoutManager;
@@ -30,6 +30,13 @@ public class SampleActivity extends ActionBarActivity {
                 cardStackView.smoothScrollToPosition(cardStackView.getAdapter().getItemCount() - 1);
             }
         });
+        findViewById(R.id.button_top).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                CardStackView cardStackView = (CardStackView) findViewById(R.id.view);
+                cardStackView.smoothScrollToPosition(0);
+            }
+        });
     }
 
 
@@ -45,7 +52,7 @@ public class SampleActivity extends ActionBarActivity {
         switch (id) {
             case R.id.action_layout_arc: {
                 CardStackView cardStackView = (CardStackView) findViewById(R.id.view);
-                cardStackView.setLayoutManager(new ArcLayoutManager(this));
+                cardStackView.setLayoutManager(new ArcStackLayoutManager(this));
                 return true;
             }
             case R.id.action_layout_larc: {

@@ -6,21 +6,21 @@
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="400dp"
+        android:layout_height="match_parent"
         android:background="#FFFFFF" />
 
     <View
         android:id="@+id/label"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:layout_margin="8dp"
+        android:layout_margin="0dp"
         android:background="#66FFFFFF" />
 
     <TextView
         android:id="@+id/text"
         android:layout_width="wrap_content"
         android:layout_height="48dp"
-        android:layout_margin="8dp"
+        android:layout_margin="0dp"
         android:layout_gravity="center_horizontal"
         android:gravity="center"
         android:text="Hello"

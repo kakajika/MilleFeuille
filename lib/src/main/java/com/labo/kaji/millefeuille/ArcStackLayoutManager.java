@@ -1,7 +1,8 @@
 package com.labo.kaji.millefeuille;
 
 import android.animation.Animator;
-import android.animation.TimeInterpolator;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.PointF;
@@ -10,20 +11,18 @@ import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.View;
 
 import com.nineoldandroids.view.ViewHelper;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
  * @author kakajika
  * @since 2015/04/18.
  */
-public class ArcLayoutManager extends RecyclerView.LayoutManager {
+public class ArcStackLayoutManager extends BaseStackLayoutManager {
 
     private static final float MIN_HORIZONTAL_SCALE = 0.7f;
     private static final float SCROLL_FRICTION_SCALE = 0.02f;
@@ -36,8 +35,8 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
     private int mScrollState;
     private final Map<View, Animator> mAnimatorMap = new HashMap<>();
 
-    public ArcLayoutManager(Context context) {
-        super();
+    public ArcStackLayoutManager(Context context) {
+        super(context);
         mItemInterval = context.getResources().getDimensionPixelSize(R.dimen.arc_item_z_interval_default);
     }
 
@@ -47,16 +46,6 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
 
     public void setItemInterval(float itemInterval) {
         mItemInterval = itemInterval;
-    }
-
-    @Override
-    public RecyclerView.LayoutParams generateDefaultLayoutParams() {
-        return new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, RecyclerView.LayoutParams.WRAP_CONTENT);
-    }
-
-    @Override
-    public boolean canScrollVertically() {
-        return true;
     }
 
     @Override
@@ -216,7 +205,7 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
         LinearSmoothScroller scroller = new LinearSmoothScroller(recyclerView.getContext() ) {
             @Override
             public PointF computeScrollVectorForPosition(int targetPosition) {
-                return ArcLayoutManager.this.computeScrollVectorForPosition(targetPosition);
+                return ArcStackLayoutManager.this.computeScrollVectorForPosition(targetPosition);
             }
         };
         scroller.setTargetPosition(position);
@@ -239,28 +228,13 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
     }
 
     @Override
-    public void onItemsRemoved(RecyclerView recyclerView, int positionStart, int itemCount) {
-        log("onItemsRemoved: position:", positionStart);
-    }
-
-    @Override
-    public void onItemsMoved(RecyclerView recyclerView, int from, int to, int itemCount) {
-        log("onItemsMoved: from:", from, " to:", to);
-    }
-
-    @Override
-    public boolean supportsPredictiveItemAnimations() {
-        return true;
-    }
-
-    private void setChildTransform(@NonNull View child, float z) {
-        setChildTransform(child, z, false);
-    }
-
-    private void setChildTransform(@NonNull final View child, float z, boolean animated) {
+    protected void setChildTransform(@NonNull final View child, float z, boolean animated) {
         final float zScale = z / mMaxZ;
         final float preScale = ViewCompat.getScaleX(child);
         final float scale = zScale * (1.0f - MIN_HORIZONTAL_SCALE) + MIN_HORIZONTAL_SCALE;
+        if (preScale == scale) {
+            return;
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             child.setPivotX(child.getWidth() * 0.5f);
             child.setPivotY(0.0f);
@@ -305,21 +279,6 @@ public class ArcLayoutManager extends RecyclerView.LayoutManager {
                 ((ShadeApplicator) child).setShadeLevel(shadowLevel);
             }
         }
-    }
-
-    private void clearChildAnimations() {
-        Iterator<Map.Entry<View, Animator>> iterator = mAnimatorMap.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<View, Animator> entry = iterator.next();
-            entry.getValue().cancel();
-            iterator.remove();
-        }
-    }
-
-    private void log(@NonNull String message, Object... args) {
-        StringBuilder string = new StringBuilder(message);
-        for (Object arg : args) string.append(arg.toString());
-        Log.i(getClass().getSimpleName(), string.toString());
     }
 
 }

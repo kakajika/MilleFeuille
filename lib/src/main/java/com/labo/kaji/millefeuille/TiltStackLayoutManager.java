@@ -13,9 +13,7 @@ import com.nineoldandroids.view.ViewHelper;
  * @author kakajika
  * @since 2015/08/08
  */
-public class TiltStackLayoutManager extends RecyclerView.LayoutManager {
-
-    private static final float SCROLL_FRICTION_SCALE = 0.02f;
+public class TiltStackLayoutManager extends BaseStackLayoutManager {
 
     private float mItemInterval = 200.0f;
     private float mMaxY = 1.0f;
@@ -23,7 +21,7 @@ public class TiltStackLayoutManager extends RecyclerView.LayoutManager {
     private int mScrollState;
 
     public TiltStackLayoutManager(Context context) {
-        super();
+        super(context);
     }
 
     @Override
@@ -186,28 +184,11 @@ public class TiltStackLayoutManager extends RecyclerView.LayoutManager {
         return dy;
     }
 
-    private void setChildTransform(@NonNull View child, float y) {
-        setChildTransform(child, y, false);
-    }
-
-    private void setChildTransform(@NonNull final View child, float y, boolean animated) {
+    @Override
+    protected void setChildTransform(@NonNull final View child, float y, boolean animated) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             child.setPivotX(child.getWidth() * 0.5f);
             child.setPivotY(0.0f);
-            child.setRotationX(-30.0f);
-//            if (animated) {
-//                ValueAnimator anim = ValueAnimator.ofFloat(preScale, scale);
-//                anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-//                    @Override
-//                    public void onAnimationUpdate(ValueAnimator animation) {
-//                        child.setScaleX((float) animation.getAnimatedValue());
-//                        child.setScaleY((float) animation.getAnimatedValue());
-//                    }
-//                });
-//                anim.setDuration(500);
-//                anim.start();
-//            } else {
-//            }
             child.setRotationX(-30.0f);
         } else {
             ViewHelper.setRotationX(child, -30.0f);

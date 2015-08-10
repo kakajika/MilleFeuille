@@ -33,10 +33,12 @@ public class ShadeCardView extends CardView implements ShadeApplicator {
     }
 
     private void init(Context context) {
+        if (isInEditMode()) return;
         setShadeLevel(0.0f);
         setMaxCardElevation(getResources().getDimensionPixelSize(R.dimen.cardview_elevation));
         setCardElevation(getResources().getDimensionPixelSize(R.dimen.cardview_elevation));
         setUseCompatPadding(true);
+        setPreventCornerOverlap(false);
     }
 
     @Override

@@ -9,10 +9,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.labo.kaji.millefeuille.ArcLayoutManager;
+import com.labo.kaji.millefeuille.ArcStackLayoutManager;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import trikita.log.Log;
 
 /**
  * @author kakajika
@@ -21,6 +23,7 @@ import java.util.List;
 public class CardStackView extends RecyclerView {
 
     private final List<Card> mCardList = new ArrayList<>();
+    private int mSerialNumber = 0;
     
     public CardStackView(Context context) {
         super(context);
@@ -41,7 +44,7 @@ public class CardStackView extends RecyclerView {
         int color = Color.rgb((int) Math.floor(Math.random() * 128) + 64,
                 (int) Math.floor(Math.random() * 128) + 64,
                 (int) Math.floor(Math.random() * 128) + 64);
-        mCardList.add(new Card(color));
+        mCardList.add(new Card(++mSerialNumber, color));
         if (getAdapter() != null) {
             getAdapter().notifyItemInserted(mCardList.size() - 1);
         }
@@ -57,7 +60,7 @@ public class CardStackView extends RecyclerView {
         final RecyclerView.Adapter adapter = new CardAdapter(mCardList);
         setAdapter(adapter);
 
-        setLayoutManager(new ArcLayoutManager(context));
+        setLayoutManager(new ArcStackLayoutManager(context));
 
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.Callback() {
 
@@ -104,11 +107,10 @@ public class CardStackView extends RecyclerView {
     }
 
     public static class Card {
-        private static int sSerialNumber = 0;
         public final int number;
         public final int color;
-        public Card(int color) {
-            this.number = ++sSerialNumber;
+        public Card(int number, int color) {
+            this.number = number;
             this.color = color;
         }
     }
@@ -134,8 +136,8 @@ public class CardStackView extends RecyclerView {
             ((ViewHolder) holder).colorLabel.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-//                    scrollToPosition(position);
-                    smoothScrollToPosition(position);
+                    scrollToPosition(position);
+//                    smoothScrollToPosition(position);
                 }
             });
         }
@@ -143,6 +145,20 @@ public class CardStackView extends RecyclerView {
         @Override
         public int getItemCount() {
             return mList.size();
+        }
+
+        @Override
+        public void onViewAttachedToWindow(final RecyclerView.ViewHolder holder) {
+            super.onViewAttachedToWindow(holder);
+
+            holder.itemView.post(new Runnable() {
+                @Override
+                public void run() {
+                    LayoutParams layoutParams = (LayoutParams) holder.itemView.getLayoutParams();
+                    layoutParams.height = holder.itemView.getWidth();
+                    holder.itemView.setLayoutParams(layoutParams);
+                }
+            });
         }
 
         private class ViewHolder extends RecyclerView.ViewHolder {

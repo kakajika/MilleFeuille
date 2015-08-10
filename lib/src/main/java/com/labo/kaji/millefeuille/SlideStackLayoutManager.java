@@ -9,17 +9,18 @@ import android.view.View;
  * @author kakajika
  * @since 2015/04/18
  */
-public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
+public class SlideStackLayoutManager extends BaseStackLayoutManager {
 
     private static final float SCROLL_FRICTION_SCALE = 0.02f;
 
     private float mItemInterval = 12.0f;
+    private float mArcCurvature = 0.5f;
     private float mMaxZ = 1.0f;
     private float mScrollZ = 0.0f;
     private int mScrollState;
 
     public SlideStackLayoutManager(Context context) {
-        super();
+        super(context);
         mItemInterval = context.getResources().getDimensionPixelSize(R.dimen.arc_item_z_interval_default);
     }
 
@@ -53,6 +54,15 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
         mScrollState = state;
     }
 
+    private float calcY(float z) {
+        float turnZ = 0.25f * mMaxZ;
+        if (z > turnZ) {
+            return ((turnZ + mMaxZ) * z - turnZ * mMaxZ) * mArcCurvature;
+        } else {
+            return z * turnZ * mArcCurvature;
+        }
+    }
+
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
         super.onLayoutChildren(recycler, state);
@@ -68,7 +78,7 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
         final int parentHeight = parentBottom - parentTop;
         final int parentLeft = getPaddingLeft();
         final int parentRight = getWidth() - getPaddingRight();
-        mMaxZ = (float) Math.sqrt(parentHeight);
+        mMaxZ = (float) Math.sqrt(parentHeight / mArcCurvature);
 
         for (int idx = 0; idx < itemCount; ++idx) {
             float z = idx * mItemInterval - mScrollZ;
@@ -76,7 +86,7 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
                 continue;
             }
             z = Math.max(0.0f, z);
-            int top = (int) (z * z) + parentTop;
+            int top = (int) calcY(z) + parentTop;
             if (top > parentBottom) {
                 break;
             }
@@ -132,7 +142,7 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
                     continue;
                 }
                 z = Math.max(0.0f, z);
-                int top = (int) (z * z) + parentTop;
+                int top = (int) calcY(z) + parentTop;
                 if (top > parentBottom) {
                     break;
                 }
@@ -157,7 +167,7 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
                     break;
                 }
                 z = Math.max(0.0f, z);
-                int top = (int) (z * z) + parentTop;
+                int top = (int) calcY(z) + parentTop;
                 if (top > parentBottom) {
 //                        Log.d(getClass().getSimpleName(), "remove child at "+lastIndex);
                     removeAndRecycleViewAt(lastIndex - firstIndex, recycler);
@@ -183,11 +193,8 @@ public class SlideStackLayoutManager extends RecyclerView.LayoutManager {
         return dy;
     }
 
-    private void setChildTransform(@NonNull View child, float z) {
-        setChildTransform(child, z, false);
-    }
-
-    private void setChildTransform(@NonNull final View child, float z, boolean animated) {
+    @Override
+    protected void setChildTransform(@NonNull final View child, float z, boolean animated) {
     }
 
 }
