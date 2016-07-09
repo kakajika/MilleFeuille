@@ -1,7 +1,5 @@
 package com.labo.kaji.millefeuille;
 
-import android.animation.Animator;
-import android.animation.TimeInterpolator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.PointF;
@@ -10,14 +8,9 @@ import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.View;
 
 import com.nineoldandroids.view.ViewHelper;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  * @author kakajika
@@ -227,11 +220,11 @@ public class LArcStackLayoutManager extends BaseStackLayoutManager {
         }
         float targetZ = (targetPosition+1) * mItemInterval - mMaxZ;
         if (mScrollZ < targetZ) {
-            mScrollZ += 1;
-            return new PointF(0, mArcCurvature);
+            mScrollZ += 0.5f;
+            return new PointF(0, 0.5f * mArcCurvature);
         } else if (mScrollZ > targetZ) {
-            mScrollZ -= 1;
-            return new PointF(0, -mArcCurvature);
+            mScrollZ -= 0.5f;
+            return new PointF(0, -0.5f * mArcCurvature);
         }
         return null;
     }

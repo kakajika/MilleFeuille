@@ -120,13 +120,11 @@ public class ArcStackLayoutManager extends BaseStackLayoutManager {
         if (mScrollState != RecyclerView.SCROLL_STATE_DRAGGING) {
             if (dz < 0) {
                 if (mScrollZ <= 0) {
-//                    dz = (int) (-dz);
                     dz = 0;
                     dy = 0;
                 }
             } else if (dz > 0) {
                 if (mScrollZ >= computeVerticalScrollRange(state)) {
-//                    dz -= 5;
                     dz = 0;
                     dy = 0;
                 }
