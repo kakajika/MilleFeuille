@@ -5,7 +5,7 @@ package com.labo.kaji.millefeuille;
  * @since 15/08/08.
  * Interface for applying item's shade level.
  */
-public interface ShadeApplicator {
+public interface Shadeable {
 
     /**
      * Apply shade level.

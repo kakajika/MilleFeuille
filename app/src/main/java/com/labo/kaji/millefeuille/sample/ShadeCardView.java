@@ -7,13 +7,13 @@ import android.graphics.drawable.Drawable;
 import android.support.v7.widget.CardView;
 import android.util.AttributeSet;
 
-import com.labo.kaji.millefeuille.ShadeApplicator;
+import com.labo.kaji.millefeuille.Shadeable;
 
 /**
  * @author kakajika
  * @since 2015/04/18.
  */
-public class ShadeCardView extends CardView implements ShadeApplicator {
+public class ShadeCardView extends CardView implements Shadeable {
 
     private final Drawable mShadowDrawable = new ColorDrawable(Color.BLACK);
 

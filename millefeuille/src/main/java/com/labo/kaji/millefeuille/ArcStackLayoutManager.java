@@ -1,8 +1,6 @@
 package com.labo.kaji.millefeuille;
 
 import android.animation.Animator;
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.PointF;
@@ -260,21 +258,21 @@ public class ArcStackLayoutManager extends BaseStackLayoutManager {
             ViewHelper.setScaleY(child, 0.0f);
             ViewHelper.setPivotY(child, 0.0f);
         }
-        if (child instanceof ShadeApplicator) {
+        if (child instanceof Shadeable) {
             final float shadowLevel = Math.max(0.0f, 1.0f - zScale - MIN_HORIZONTAL_SCALE * 0.5f);
             if (animated) {
-                final float preShadowLevel = ((ShadeApplicator) child).getShadeLevel();
+                final float preShadowLevel = ((Shadeable) child).getShadeLevel();
                 ValueAnimator anim = ValueAnimator.ofFloat(preShadowLevel, shadowLevel);
                 anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                     @Override
                     public void onAnimationUpdate(ValueAnimator animation) {
-                        ((ShadeApplicator) child).setShadeLevel((float) animation.getAnimatedValue());
+                        ((Shadeable) child).setShadeLevel((float) animation.getAnimatedValue());
                     }
                 });
                 anim.setDuration(500);
                 anim.start();
             } else {
-                ((ShadeApplicator) child).setShadeLevel(shadowLevel);
+                ((Shadeable) child).setShadeLevel(shadowLevel);
             }
         }
     }
